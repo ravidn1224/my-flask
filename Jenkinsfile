@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'ravidocker285/flask-app:latest'
-        APP_HOST = 'ubuntu@<EC2-PUBLIC-IP>'
+        APP_HOST = 'ubuntu@'
         SSH_CRED_ID = 'app-server-key'
     }
 
