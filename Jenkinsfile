@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'jenkins-agent-custom' // ← שימי את שם התמונה שלך כאן
-        DOCKERHUB_USER = 'ravidocker285'    // ← שם המשתמש שלך ב-DockerHub
-        REMOTE_HOST = 'ubuntu@172.31.28.95' // ← החליפי ב-IP הציבורי של App Server
+        IMAGE_NAME = 'jenkins-agent-custom' 
+        DOCKERHUB_USER = 'ravidocker285'    
+        REMOTE_HOST = 'ubuntu@' 
     }
 
     triggers {
