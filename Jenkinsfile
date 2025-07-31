@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'ravidocker285/flask-app:latest'
-        APP_HOST = 'ubuntu@'
-        SSH_CRED_ID = 'app-server-key'
+        IMAGE_NAME = 'jenkins-agent-custom' // ← שימי את שם התמונה שלך כאן
+        DOCKERHUB_USER = 'ravidocker285'    // ← שם המשתמש שלך ב-DockerHub
+        REMOTE_HOST = 'ubuntu@172.31.28.95' // ← החליפי ב-IP הציבורי של App Server
     }
 
     triggers {
@@ -12,10 +12,15 @@ pipeline {
     }
 
     stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                sh 'docker --version'
-                sh 'docker build -t $DOCKER_IMAGE .'
+                sh "docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:latest ."
             }
         }
 
@@ -24,22 +29,23 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push $DOCKER_IMAGE
+                        docker push ${DOCKER_USER}/${IMAGE_NAME}:latest
                     '''
                 }
             }
         }
 
-        stage('Deploy to EC2') {
+        stage('Deploy to App Server') {
             steps {
-                sshagent (credentials: [SSH_CRED_ID]) {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no $APP_HOST '
-                        docker pull $DOCKER_IMAGE &&
-                        docker rm -f flask-app || true &&
-                        docker run -d --name flask-app -p 5000:5000 $DOCKER_IMAGE
-                    '
-                    '''
+                sshagent(['app-server-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_HOST} '
+                            docker pull ${DOCKERHUB_USER}/${IMAGE_NAME}:latest &&
+                            docker stop flask-app || true &&
+                            docker rm flask-app || true &&
+                            docker run -d --name flask-app -p 5000:5000 ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
+                        '
+                    """
                 }
             }
         }
